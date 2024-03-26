@@ -1,1 +1,136 @@
-gfgg
+package sample.java_00;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+/**
+ * update Date : 2024-03-26 09:45:46
+ * DOC : 파일 관리
+ * URL :
+ */
+
+public class FilesMmg {
+
+    private File gfile;
+    public static int dirCnt = 0;
+    public static int fileCnt = 0;
+
+    /**
+     * 디렉토리 / 파일 복사 관리
+     * @param copyPath
+     * @param targetPath
+     * @throws Exception
+     */
+    public void copyFiles(String copyPath,String targetPath) throws Exception {
+        
+        // 유효성 체크 입력 데이터가 없거나 길이가 0인것을 말한다.
+        if(copyPath.length() <= 0 || copyPath.isEmpty()) { 
+            throw new IllegalArgumentException("아무것도 존재 하지 않습니다. 다시 시작 하십시오.");
+        }
+        
+        gfile = new  File(copyPath); //복사할 최초 데이터(디렉토리 또는 파일)
+
+                    
+        //복사할 타겟이 없을 경우 임의 생성한다.
+        if(targetPath == null) { 
+            String day = getDate("YYYYMM")+getDate("dd")+getDate("HHmmss");
+            targetPath = "D://new"+day;
+        } else if(targetPath.length() <=0 || targetPath.isEmpty()) {
+            String day = getDate("YYYYMM")+getDate("dd")+getDate("HHmmss");
+            targetPath = "D://new"+day;
+        }
+
+        //파일 구분 (디렉토리인지 파일인지 체크)
+        if(gfile.isFile()) {
+            System.out.println("[파일 복사할 경우]-----");
+            copyFile(new File(copyPath),new File(targetPath));
+        } else {
+            System.out.println("[디렉토리를 복사할 경우 ]-----");
+            // 유효성 체크 선택한 디렉토리가 없을 경우 체크 [최상위 디렉토리]
+            if(!gfile.isDirectory()) { 
+                throw new IllegalArgumentException("선택한(또는 복사할) 디렉토리가 존재 하지 않습니다.");
+            }
+
+            try {
+                copyDirectory(new File(copyPath), new File(targetPath));
+            } catch(IOException ex) {
+                throw new Exception("디렉토리 / 파일 복사중 오류가 발생하였습니다. [상세 메시지] >>>>"+ex.getMessage());  
+            }
+        }
+    }
+
+    /**
+     * 파일만 복사한다.
+     * @param oldDirPath
+     * @param newDirPath
+     * @throws IOException
+     */
+    private static void copyFile(File oldDirPath, File newDirPath) throws IOException {
+        System.out.println("[디렉토리를 복사할 경우 ]-----"+oldDirPath.getName());
+        Path targetFilePath = new File(newDirPath, oldDirPath.getName()).toPath();
+        Files.copy(oldDirPath.toPath(), targetFilePath,StandardCopyOption.REPLACE_EXISTING);
+    }
+
+     /**
+     * Update Date : 2024-03-26 10:46:14
+     * Method Name : copyDirectory
+     * Method DOC : 디렉토리 / 파일 복사
+      * @param oldDirPath [복사할 디렉토리 경로]
+      * @param newDirPath [백업할 디렉토리 경로]
+      * @throws IOException
+      */
+    private static void copyDirectory(File oldDirPath, File newDirPath) throws IOException {
+
+        //디렉토리가 없으면 생성한다.
+        if(!newDirPath.exists()) {
+            newDirPath.mkdir();
+        }
+
+        File[] files = oldDirPath.listFiles();
+        if(files != null) {
+            for(File file:files) {
+                if(file.isDirectory()) {
+                    System.out.println("복사 진행중 "+getLoadBarImg(dirCnt));
+                    dirCnt++;
+                    copyDirectory(file, new File(newDirPath,file.getName()) );
+                } else {
+                    Path oldFilePath = file.toPath();
+                    Path targetFilePath = new File(newDirPath, file.getName()).toPath();
+                    Files.copy(oldFilePath, targetFilePath,StandardCopyOption.REPLACE_EXISTING);
+                    fileCnt++;
+                }
+            }
+            
+        }
+        
+    }
+
+    /////////////// User Method /////////////////////////////////////
+    public static String getDate(String strPattern) {
+        //현재 기준의 날짜를 가져온다.
+        Date date = new Date();
+        //Date 클래스 포장하기 (포맷 설정)
+        SimpleDateFormat format = new SimpleDateFormat(strPattern);
+        return format.format(date).toString();
+    }
+
+    public static String getLoadBarImg(int cnt) {
+        String loadChkBar = ">";
+        String msg = "";
+        if(cnt > 0) {
+            for(int i=0; i < cnt ; i++) {
+                loadChkBar += ">";
+            }
+            msg = (cnt+1) +"%";
+        } else {
+            msg = "1%";
+        }
+        return loadChkBar+" "+msg;
+    }
+
+}
