@@ -1,1 +1,33 @@
-est11 TEST 2024
+package sample.java_00;
+
+import java.time.Duration;
+import java.time.Instant;
+
+class Hello {
+
+    /**
+     * @param str
+     */
+    public static void main(String[] str) {
+
+        FilesMmg filesMmg = new FilesMmg();
+        Instant start= Instant.now();
+        Instant end;
+        try{
+            start = Instant.now();
+           filesMmg.copyFiles("D://유틸","","A");
+           //filesMmg.deleteDirFiles(new File("D://new20240326161832"));
+        } catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            end = Instant.now();
+            long elapsedTime = Duration.between(start, end).toMillis();
+            String result = "";
+                    result += "[디렉토리 복사 : "+filesMmg.dirCnt+" 건 완료 ] / ";
+                    result += "[파일 복사 : "+filesMmg.fileCnt+" 건 완료 ] / ";
+                    result += "[수행시간 : "+elapsedTime+" ns ] ";
+            System.out.println("복사 완료 "+filesMmg.getLoadBarImg(99));
+            System.out.println(result);
+        }
+    }
+}
