@@ -26,16 +26,15 @@ public class FilesMmg {
      * @param targetPath
      * @throws Exception
      */
-    public void copyFiles(String copyPath,String targetPath) throws Exception {
+    public void copyFiles(String copyPath,String targetPath,String gubun) throws Exception {
         
         // 유효성 체크 입력 데이터가 없거나 길이가 0인것을 말한다.
         if(copyPath.length() <= 0 || copyPath.isEmpty()) { 
-            throw new IllegalArgumentException("아무것도 존재 하지 않습니다. 다시 시작 하십시오.");
+            throw new IllegalArgumentException("디렉토리가 존재하지 않습니다. 다시 시작 하십시오.");
         }
         
         gfile = new  File(copyPath); //복사할 최초 데이터(디렉토리 또는 파일)
 
-                    
         //복사할 타겟이 없을 경우 임의 생성한다.
         if(targetPath == null) { 
             String day = getDate("YYYYMM")+getDate("dd")+getDate("HHmmss");
@@ -57,7 +56,12 @@ public class FilesMmg {
             }
 
             try {
-                copyDirectory(new File(copyPath), new File(targetPath));
+                if(gubun == "A") {
+                    copyDirectory(new File(copyPath), new File(targetPath));
+                } else {
+                    copyAllFile(new File(copyPath), new File(targetPath));
+                }
+                
             } catch(IOException ex) {
                 throw new Exception("디렉토리 / 파일 복사중 오류가 발생하였습니다. [상세 메시지] >>>>"+ex.getMessage());  
             }
@@ -97,17 +101,112 @@ public class FilesMmg {
                 if(file.isDirectory()) {
                     System.out.println("복사 진행중 "+getLoadBarImg(dirCnt));
                     dirCnt++;
-                    copyDirectory(file, new File(newDirPath,file.getName()) );
+                   copyDirectory(file, new File(newDirPath,file.getName()) );
                 } else {
-                    Path oldFilePath = file.toPath();
-                    Path targetFilePath = new File(newDirPath, file.getName()).toPath();
-                    Files.copy(oldFilePath, targetFilePath,StandardCopyOption.REPLACE_EXISTING);
-                    fileCnt++;
+                    if(file.isFile()) {
+                        Path oldFilePath = file.toPath();
+                        Path targetFilePath = new File(newDirPath, file.getName()).toPath();
+                        Files.copy(oldFilePath, targetFilePath,StandardCopyOption.REPLACE_EXISTING);
+                        fileCnt++;
+                    }
                 }
             }
             
         }
         
+    }
+
+    /**
+     * 파일만 전부 복사한다.
+     * @param oldDirPath
+     * @param newDirPath
+     * @throws IOException
+     */
+    private static void copyAllFile(File oldDirPath, File newDirPath) throws IOException {
+
+        //디렉토리가 없으면 생성한다.
+        if(!newDirPath.exists()) {
+            newDirPath.mkdir();
+        }
+
+        File[] files = oldDirPath.listFiles();
+        if(files != null) {
+            for(File file:files) {
+                if(file.isDirectory()) {
+                    System.out.println("복사 진행중 "+getLoadBarImg(dirCnt));
+                    dirCnt++;
+                   copyAllFile(file, new File(newDirPath,"") );
+                } else {
+                    if(file.isFile()) {
+                        
+                        Path oldFilePath = file.toPath();
+                        Path targetFilePath = new File(newDirPath, file.getName()).toPath();
+                        Files.copy(oldFilePath, targetFilePath,StandardCopyOption.REPLACE_EXISTING);
+                        fileCnt++;
+                    }
+                }
+            }
+            
+        }
+        
+    }
+
+    public void deleteDirFiles(File delPath) throws Exception {
+
+        File[] files = delPath.listFiles();
+        if(files != null) {
+            for(File file:files) {
+                // 디렉토리가 비어 있는지 확인
+                if(file.list().length == 0) { // 빈 디렉토리일대 디렉토리 삭제
+                    if(file.delete()) {
+                        System.out.println("디렉토리 삭제 성공");
+                    }
+                } else 
+                if(file.isDirectory()) {
+                    System.out.println("삭제 진행중 "+getLoadBarImg(dirCnt));
+                    dirCnt++;
+                    deleteDirFiles(file);
+                } else {
+                        if(file.delete()){
+                            System.out.println("파일 삭제 성공 2");
+                        }
+                        fileCnt++;
+                }
+            }
+            
+        }
+    }
+
+    public void deleteDirFiles_(String delPath) throws Exception {
+        File dirFiles = new File(delPath);
+
+        if(!dirFiles.exists()) {
+            throw new IllegalArgumentException("디렉토리가 존재하지 않습니다. 다시 시작 하십시오.");
+        }
+
+        if(dirFiles.isDirectory()) {
+            // 디렉토리가 비어 있는지 확인
+            if(dirFiles.listFiles().length == 0) { // 빈 디렉토리일대 디렉토리 삭제
+                if(dirFiles.delete()) {
+                    System.out.println("디렉토리 삭제 성공");
+                }
+            } else {
+                File[] files = dirFiles.listFiles();
+                for(File file:files) {
+                    if(file.delete()){
+                        System.out.println("파일 삭제 성공 1");
+                    }
+                }
+
+            }
+        } else {
+            File[] files = dirFiles.listFiles();
+            for(File file:files) {
+                if(file.delete()){
+                    System.out.println("파일 삭제 성공 2");
+                }
+            } 
+        }
     }
 
     /////////////// User Method /////////////////////////////////////
