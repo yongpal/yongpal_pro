@@ -8,26 +8,41 @@ class Hello {
     /**
      * @param str
      */
+    @SuppressWarnings("static-access")
     public static void main(String[] str) {
 
         FilesMmg filesMmg = new FilesMmg();
         Instant start= Instant.now();
         Instant end;
+        long StartTime1 = System.currentTimeMillis();
+        long StartTime2 = System.nanoTime();
+
         try{
-            start = Instant.now();
-           filesMmg.copyFiles("D://유틸","","A");
-           //filesMmg.deleteDirFiles(new File("D://new20240326161832"));
+        start = Instant.now();
+
+         //filesMmg.copyFiles("D://mosaicRepository","","A");
+          //filesMmg.copyFiles("D://유틸","","A");
+          //filesMmg.deleteFiles(new File("D://백업//20240403121456"),0);
+          //filesMmg.deleteDirectory(new File("D://백업//20240403134412"));
+          //filesMmg.countDirectory(new File("D://mosaicRepository"));
+          filesMmg.countDirDtails("D://mosaicRepository");
         } catch(Exception e) {
             e.printStackTrace();
         } finally {
             end = Instant.now();
             long elapsedTime = Duration.between(start, end).toMillis();
+            long EndTime1 = System.currentTimeMillis();
+            long EndTime2 = System.nanoTime();
+
             String result = "";
-                    result += "[디렉토리 복사 : "+filesMmg.dirCnt+" 건 완료 ] / ";
-                    result += "[파일 복사 : "+filesMmg.fileCnt+" 건 완료 ] / ";
-                    result += "[수행시간 : "+elapsedTime+" ns ] ";
-            System.out.println("복사 완료 "+filesMmg.getLoadBarImg(99));
+                    result += "[디렉토리 "+filesMmg.gMsgTitleNm+" : "+filesMmg.dirCnt+" 건 완료 ] / ";
+                    result += "[파일 "+filesMmg.gMsgTitleNm+" : "+filesMmg.fileCnt+" 건 완료 ] / ";
+                    result += "[수행시간 : "+elapsedTime+" ms ] ";
             System.out.println(result);
+            System.out.println(filesMmg.gMsgTitleNm+" 완료 "+filesMmg.getLoadBarImg(99));
+            System.out.println("currentTimeMillis() : " + (EndTime1 - StartTime1)/1000.0 + "초");
+            System.out.println("nanoTime() : " + (EndTime2 - StartTime2)/1000000000.0 + "초");
+            System.out.println("디렉토리 사이즈 : " + filesMmg.dirSize);
         }
     }
 }
