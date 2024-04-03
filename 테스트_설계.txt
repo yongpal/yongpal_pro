@@ -1,9 +1,21 @@
+/**
+ * 파일 관리 Class
+ * 2024-04-03 16:09:27
+ * 디렉토리 및 파일 관리를 조절하는 공통 클래스이다.
+ * 1. 디렉토리 생서 및 파일 복사
+ * 2. 디렉토리 및 파일 삭제
+ * 3. 디렉토리 및 파일 갯수
+ * 참고 : java 8 버전 및 상위 버전에서만 가능하다
+ */
+
 package sample.java_00;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,6 +31,8 @@ public class FilesMmg {
     private File gfile;
     public static int dirCnt = 0;
     public static int fileCnt = 0;
+    public static long dirSize = 0;
+    public static String gMsgTitleNm="복사";
 
     /**
      * 디렉토리 / 파일 복사 관리
@@ -38,11 +52,13 @@ public class FilesMmg {
         //복사할 타겟이 없을 경우 임의 생성한다.
         if(targetPath == null) { 
             String day = getDate("YYYYMM")+getDate("dd")+getDate("HHmmss");
-            targetPath = "D://new"+day;
+            targetPath = "D://백업/"+day;
         } else if(targetPath.length() <=0 || targetPath.isEmpty()) {
             String day = getDate("YYYYMM")+getDate("dd")+getDate("HHmmss");
-            targetPath = "D://new"+day;
+            targetPath = "D://백업/"+day;
         }
+        
+        gMsgTitleNm="복사";
 
         //파일 구분 (디렉토리인지 파일인지 체크)
         if(gfile.isFile()) {
@@ -151,64 +167,163 @@ public class FilesMmg {
         
     }
 
-    public void deleteDirFiles(File delPath) throws Exception {
+    /**
+     * 사이즈 및 갯수를 정의 한다.
+     * @param dir
+     * @throws Exception
+     */
+    public static void countDirDtails(String dir) throws Exception {
+        Path folder = Paths.get(dir);
+        fileCnt = 0;
+        dirCnt = 0;
+        dirSize = 0;
+        try{
+            fileCnt = Files.walk(folder).filter(p -> p.toFile().isFile()).mapToInt(p -> 1).sum(); // 파일 갯수
+            dirCnt = Files.walk(folder).filter(p -> p.toFile().isDirectory()).mapToInt(p -> 1).sum(); // 폴더 갯수
+            dirSize = Files.walk(folder).filter(p -> p.toFile().isFile()).mapToLong(p -> p.toFile().length()).sum(); // 파일 갯수
+        } catch (Exception ex) {
 
+        }
+    }
+
+    public static void countDirectory(final File directory) throws IOException {
+        final File[] files = verifiedListFiles(directory);
+        if(dirCnt == 0) {gMsgTitleNm="갯수";}
+        
+         for (final File file : files) {
+             try {
+                /* 
+                if(file.isDirectory()) {
+                    //System.out.println("디렉토리 카운터 >>>>>>>>");
+                    dirCnt++;
+                    countDirectory(file);
+                }
+                */
+                if(file.isFile()) {
+                    fileCnt++;
+                    //System.out.println("파일 카운터 >>>>>>>>");
+                } else {
+                    countDirectory(file);
+                }
+                 
+             } catch (final Exception ioe) {
+  
+             }
+         }
+     }
+    /******** Delete Methods **************************/
+    /**
+     * 파일만 삭제 한다.
+     * @param delPath
+     * @param mCnnt
+     * @throws Exception
+     */
+    public void deleteFiles(File delPath,int mCnnt) throws Exception {
+        if(mCnnt == 0) {
+            fileCnt = 0;
+            gMsgTitleNm = "삭제";
+        }
         File[] files = delPath.listFiles();
         if(files != null) {
             for(File file:files) {
-                // 디렉토리가 비어 있는지 확인
-                if(file.list().length == 0) { // 빈 디렉토리일대 디렉토리 삭제
-                    if(file.delete()) {
-                        System.out.println("디렉토리 삭제 성공");
-                    }
-                } else 
+
                 if(file.isDirectory()) {
-                    System.out.println("삭제 진행중 "+getLoadBarImg(dirCnt));
-                    dirCnt++;
-                    deleteDirFiles(file);
-                } else {
-                        if(file.delete()){
-                            System.out.println("파일 삭제 성공 2");
-                        }
-                        fileCnt++;
+                    //System.out.println("삭제 진행중 "+getLoadBarImg(dirCnt));
+                    // 디렉토리가 비어 있는지 확인
+                    //System.out.println("디렉토리 일경우 다시 돌린다.");
+                    //dirCnt++;
+                   // deleteDir(file);
+                    deleteFiles(file,(mCnnt == 0)? 1:mCnnt);
+                   
+                }  else {
+                    if(file.delete()){
+                        System.out.println("파일 삭제 성공 1");
+                        deleteFiles(file,(mCnnt == 0)? 1:mCnnt);
+                        fileCnt = (mCnnt == 0)? 1:mCnnt;
+                        mCnnt++;
+                    } else {
+                        System.out.println("삭제할 파일이 존재 하지 않는다.");
+                    }
                 }
             }
             
         }
     }
 
-    public void deleteDirFiles_(String delPath) throws Exception {
-        File dirFiles = new File(delPath);
 
-        if(!dirFiles.exists()) {
-            throw new IllegalArgumentException("디렉토리가 존재하지 않습니다. 다시 시작 하십시오.");
+    public static void cleanDirectory(final File directory) throws IOException {
+       final File[] files = verifiedListFiles(directory);
+
+        IOException exception = null;
+        for (final File file : files) {
+            try {
+                forceDelete(file);
+                System.out.println("File OR Directory Delete Load Status [Delete] ----->> "+(dirCnt+1)+" %");
+                
+            } catch (final IOException ioe) {
+                exception = ioe;
+            }
         }
 
-        if(dirFiles.isDirectory()) {
-            // 디렉토리가 비어 있는지 확인
-            if(dirFiles.listFiles().length == 0) { // 빈 디렉토리일대 디렉토리 삭제
-                if(dirFiles.delete()) {
-                    System.out.println("디렉토리 삭제 성공");
-                }
-            } else {
-                File[] files = dirFiles.listFiles();
-                for(File file:files) {
-                    if(file.delete()){
-                        System.out.println("파일 삭제 성공 1");
-                    }
-                }
-
-            }
-        } else {
-            File[] files = dirFiles.listFiles();
-            for(File file:files) {
-                if(file.delete()){
-                    System.out.println("파일 삭제 성공 2");
-                }
-            } 
+        if (null != exception) {
+            throw exception;
         }
     }
 
+    public static void forceDelete(final File file) throws IOException {
+        if (file.isDirectory()) {
+            dirCnt++;
+            deleteDirectory(file);
+        } else {
+            final boolean filePresent = file.exists();
+            if (!file.delete()) {
+                if (!filePresent) {
+                    throw new FileNotFoundException("File does not exist: " + file);
+                }
+                final String message =
+                        "Unable to delete file: " + file;
+                throw new IOException(message);
+            }
+            fileCnt++;
+        }
+    }
+
+    private static File[] verifiedListFiles(File directory) throws IOException {
+        if (!directory.exists()) {
+            final String message = directory + " does not exist";
+            throw new IllegalArgumentException(message);
+        }
+
+        if (!directory.isDirectory()) {
+            final String message = directory + " is not a directory";
+            throw new IllegalArgumentException(message);
+        }
+
+        final File[] files = directory.listFiles();
+        if (files == null) {  // null if security restricted
+            throw new IOException("Failed to list contents of " + directory);
+        }
+        return files;
+    }
+
+    public static void deleteDirectory(final File directory) throws IOException {
+        if (!directory.exists()) {
+            throw new IllegalArgumentException("디렉토리가 존재하지 않습니다. 다시 시작 하십시오.");
+            // return;
+        }
+        gMsgTitleNm = "삭제";
+
+       // if (!isSymlink(directory)) {
+            cleanDirectory(directory);
+        //}
+
+        if (!directory.delete()) {
+            final String message =
+                    "Unable to delete directory " + directory + ".";
+            throw new IOException(message);
+        }
+    }
+  
     /////////////// User Method /////////////////////////////////////
     public static String getDate(String strPattern) {
         //현재 기준의 날짜를 가져온다.
@@ -223,7 +338,7 @@ public class FilesMmg {
         String msg = "";
         if(cnt > 0) {
             for(int i=0; i < cnt ; i++) {
-                loadChkBar += ">";
+                //loadChkBar += ">";
             }
             msg = (cnt+1) +"%";
         } else {
