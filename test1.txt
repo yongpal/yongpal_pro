@@ -11,3 +11,27 @@ FILE_SIZE NUMBER
 CREATE_DATE DATE
 CREATE_USER VARCHAR2
 -----------------------------------------
+
+--------------------------------------------
+* DATA CLEAR
+ID
+DATA_TYPE
+COMTY_ID
+MENU_ID
+POST_ID
+FILE_ID
+STATUS
+FILE_SIZE
+CLEAR_DATE
+CREATE_DATE
+DELETE_YN
+DELETE_DATE
+LAST_UPDATE_DATE
+PERIOD
+EXTEND_USE_YN
+COMTY_KIND
+INSPECT_ID
+--------------------------------------------
+
+
+
